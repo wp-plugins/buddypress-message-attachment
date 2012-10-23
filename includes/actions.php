@@ -11,7 +11,7 @@ function bp_message_attachement_compose() {
 	</label>
 	<input type='file' name='ma_file' id='ma_file'/>
     <?php
-	wp_enqueue_script( 'bp-msgat-general', WP_PLUGIN_URL .'/bp-message-attachement/includes/js/general.js' );
+	wp_enqueue_script( 'bp-msgat-general', WP_PLUGIN_URL .'/buddypress-message-attachement/includes/js/general.js' );
     
     ?>
 <?php
@@ -26,7 +26,7 @@ function bp_message_attachement_compose_reply() {
 	</label>
 	<input type='file' name='ma_file' id='ma_file'/>
    <?php
-    wp_enqueue_script( 'bp-msgat-reply', WP_PLUGIN_URL .'/bp-message-attachement/includes/js/reply.js' );
+    wp_enqueue_script( 'bp-msgat-reply', WP_PLUGIN_URL .'/buddypress-message-attachement/includes/js/reply.js' );
     
     ?>
 <?php
@@ -202,7 +202,7 @@ function bp_message_attachement_show_attachement($msg){
 				?>
 			</div>
 			<?php
-			wp_enqueue_style( 'bp-msgat-style', WP_PLUGIN_URL .'/bp-message-attachement/includes/css/general.css' );
+			wp_enqueue_style( 'bp-msgat-style', WP_PLUGIN_URL .'/buddypress-message-attachement/includes/css/general.css' );
 			?>
 		<?php
 		}
