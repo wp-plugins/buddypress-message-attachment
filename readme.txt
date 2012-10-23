@@ -25,6 +25,9 @@ This Buddypress plugin enables users to send attachments in private messages. Th
 
 
 == Screenshots ==
+1. compose message screen
 
+2. a message received with attachment
 
+3. admin settings screen
 == Changelog ==
