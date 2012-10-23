@@ -1,0 +1,17 @@
+div.msgat_message_attachement{
+	border:1px solid #ddd; 
+	padding:5px;
+}
+div.msgat_message_attachement span{
+	font-weight:bold;
+}
+ul.msgat_att_list {
+	margin:0; padding:0; float:right;
+}
+ul.msgat_att_list li{
+	list-style-type:none; 
+	float:left;
+	margin:5px 10px;
+	padding-left: 20px;
+	background:url(clip.png) no-repeat center left;
+}
