@@ -17,8 +17,8 @@ This Buddypress plugin enables users to send attachments in private messages. Th
 == Installation ==
 
 1. Upload plugin to the `/wp-content/plugins/` directory
-1. Activate the plugin through the 'Plugins' menu in WordPress
-1. Then from the navigation panel go to Buddypress > Message Attachement to configure the file types and size
+2. Activate the plugin through the 'Plugins' menu in WordPress
+3. Then from the navigation panel go to Buddypress > Message Attachement to configure the file types and size
 
 == Frequently Asked Questions ==
 
