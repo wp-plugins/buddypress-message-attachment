@@ -32,6 +32,14 @@ After activating, make sure you change settings according to your liking/require
 * Made it multisite compatible.
 * Removed unnecessary custom post type.
 
+**Updating from 1.1 to 2.0**
+Plugin has been completely rewritten. Data structure where attachment details were saved is changed. Unnecessary custom post type has been removed.
+This means that you'll loose all previous attachments data. There was no good way to continue supporting previous version. Plugin was not working with 
+
+latest versions of wordpress and buddypress in almost all cases. But in case if your site had this plugin working, you shouldn't update the plugin right away. 
+
+Please contact me, i plan on writing a separate importer to import old data into new data structure.
+
 = 1.1 =
 * Small Bug fixes
 
