@@ -2,46 +2,54 @@
 /*
 Plugin Name: BuddyPress Message Attachment
 Plugin URI: http://webdeveloperswall.com/buddypress/buddypress-message-attachment
-Description: This Buddypress plugin enables users to send attachements in private messages
-Version: 1.1
-Revision Date: 08 21, 2012
-Requires at least: WP 3.2.1, BuddyPress 1.5
-Tested up to: WP 3.2.1, BuddyPress 1.6
-License: GNU General Public License 2.0 (GPL) http://www.gnu.org/licenses/gpl.html
-Author: E-Media Identity
-Author URI: http://emediaidentity.com/
-Network: true
+Description: Extend BuddyPress' private message feature by enabling attachments. This plugin enables users to send attachments in private messages.
+Version: 2.0
+Author: ckchaudhary
+Author URI: http://webdeveloperswall.com/author/ckchaudhary
+Text Domain: bp-msgat
+Domain Path: /languages
 */
-// Define a constant that can be checked to see if the component is installed or not.
-define( 'BP_MSGAT_IS_INSTALLED', 1 );
 
-// Define a constant that will hold the current version number of the component
-// This can be useful if you need to run update scripts or do compatibility checks in the future
-define( 'BP_MSGAT_VERSION', '1.1' );
+// Exit if accessed directly
+if ( ! defined( 'ABSPATH' ) ) exit;
 
-// Define a constant that we can use to construct file paths throughout the component
-define( 'BP_MSGAT_PLUGIN_DIR', dirname( __FILE__ ) );
+/* ++++++++++++++++++++++++++++++
+ * CONSTANTS
+ +++++++++++++++++++++++++++++ */
+// Directory
+if ( ! defined( 'BPMSGAT_PLUGIN_DIR' ) ) {
+	define( 'BPMSGAT_PLUGIN_DIR', trailingslashit( plugin_dir_path( __FILE__ ) ) );
+}
 
+// Url
+if ( ! defined( 'BPMSGAT_PLUGIN_URL' ) ) {
+	$plugin_url = trailingslashit( plugin_dir_url( __FILE__ ) );
 
-define ( 'BP_MSGAT_DB_VERSION', '1' );
+	// If we're using https, update the protocol.
+	if ( is_ssl() )
+		$plugin_url = str_replace( 'http://', 'https://', $plugin_url );
 
-/* Only load the component if BuddyPress is loaded and initialized. */
+	define( 'BPMSGAT_PLUGIN_URL', $plugin_url );
+}
+
+/* ______________________________ */
+
 function bp_msgat_init() {
-	// Because our loader file uses BP_Component, it requires BP 1.5 or greater.
-	if ( version_compare( BP_VERSION, '1.3', '>' ) )
-		require( dirname( __FILE__ ) . '/includes/bp-msgat-loader.php' );
+	global $bp_msgat;
+	require( BPMSGAT_PLUGIN_DIR . 'includes/main-class.php' );
+    $bp_msgat = BP_Msgat_Plugin::instance();
 }
-add_action( 'bp_include', 'bp_msgat_init' );
+add_action( 'plugins_loaded', 'bp_msgat_init' );
 
-/* Put setup procedures to be run when the plugin is activated in the following function */
-function bp_msgat_activate() {
-	
+/**
+ * Returns plugins instance.
+ * Must be called after plugins_loaded.
+ * 
+ * @since 2.0
+ * @global Main plugin object $bp_msgat
+ * @return Main plugin object
+ */
+function bp_message_attachment(){
+	global $bp_msgat;
+	return $bp_msgat;
 }
-register_activation_hook( __FILE__, 'bp_msgat_activate' );
-
-/* On deacativation, clean up anything your component has added. */
-function bp_msgat_deactivate() {
-	 
-}
-register_deactivation_hook( __FILE__, 'bp_msgat_deactivate' );
-?>

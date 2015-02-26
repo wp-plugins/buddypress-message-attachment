@@ -1,200 +1,285 @@
 <?php
-function bp_msgat_add_admin_menu() {
-	global $bp;
+// Exit if accessed directly
+if ( !defined('ABSPATH') )
+	exit;
 
-	if ( !is_super_admin() )
-		return false;
+if ( !class_exists('BP_Msgat_Admin') ):
 
-	add_submenu_page( 
-		'bp-general-settings',
-		__( 'Message Attachement', 'bp-msgat' ),
-		__( 'Message Attachement', 'bp-msgat' ),
-		'manage_options', 
-		'bp-msgat-settings', 
-		'bp_msgat_admin' 
-	);
-}
-// The bp_core_admin_hook() function returns the correct hook (admin_menu or network_admin_menu),
-// depending on how WordPress and BuddyPress are configured
-add_action( bp_core_admin_hook(), 'bp_msgat_add_admin_menu' );
+	class BP_Msgat_Admin {
 
-/**
- * bp_msgat_admin()
- *
- * Checks for form submission, saves component settings and outputs admin screen HTML.
- */
-function bp_msgat_admin() {
-	global $bp;
-	/*check and update the default value for audio, video codes*/
-	$ma_audiocode = get_option( 'ma_audiocode' );
-	if(!isset($ma_audiocode) || $ma_audiocode ==""){
-		$ma_audiocode = '<audio controls="controls">[att-code]Your browser does not support the audio element.</audio>';
-		update_option( 'ma_audiocode', $ma_audiocode );
-	}
-	$ma_videocode = get_option( 'ma_videocode' );
-	if(!isset($ma_videocode) || $ma_videocode ==""){
-		$ma_videocode = '<video width="320" height="240" controls="controls" preload="metadata">[att-code]Your browser does not support the video tag.</video>';
-		update_option( 'ma_videocode', $ma_videocode );
-	}
-	
-	/* If the form has been submitted and the admin referrer checks out, save the settings */
-	if ( isset( $_POST['ma-submit'] ) && check_admin_referer('msgat-settings') ) {
-		$ext_arr = $_POST['ma-allowedExtensions'];
-		$ext_csv ="";
-		if(isset($ext_arr) && !empty($ext_arr)){
-		foreach($ext_arr as $ext){
-			$ext_csv .= $ext .",";
+		/**
+		 * Plugin options
+		 *
+		 * @var array
+		 */
+		public $options = array();
+		private $network_activated = false,
+			$plugin_slug = 'bp-msgat',
+			$menu_hook = 'admin_menu',
+			$settings_page = 'options-general.php',
+			$capability = 'manage_options',
+			$form_action = 'options.php',
+			$plugin_settings_url;
+
+		/**
+		 * Empty constructor function to ensure a single instance
+		 */
+		public function __construct() {
+			// ... leave empty, see Singleton below
 		}
-		}
-		if(trim($_POST['ma-addNewExtention'])!=""){
-			//remove the first and last character from string if they are comma
-			$more_ext = trim(trim($_POST['ma-addNewExtention']),",");
-			$more_ext = str_replace(".","", $more_ext);
-			$ext_csv .= $more_ext;
-		}
-		//remove the last comma if present
-		$ext_csv = trim(trim($ext_csv),",");
-		
-		update_option( 'ma_allowedExtension', $ext_csv );
-		update_option( 'ma_maxFileSize', $_POST['ma-maxFileSize'] );
-		if(isset($_POST['code_audio']) && trim($_POST['code_audio'])!=""){
-			update_option( 'ma_audiocode', stripslashes(trim($_POST['code_audio'])) );
-		}
-		if(isset($_POST['code_video']) && trim($_POST['code_video'])!=""){
-			update_option( 'ma_videocode', stripslashes(trim($_POST['code_video'])) );
-		}
-		
-		$ma_show_attach = "";
-		if(isset($_POST['show_attach_audio'])){$ma_show_attach = "audio";}
-		if(isset($_POST['show_attach_video'])){$ma_show_attach .= ",video";}
-		$ma_show_attach = trim($ma_show_attach,",");
-		update_option('ma_show_attach',$ma_show_attach);
-		
-		$updated = true;
-	}
-	$ma_allowedExtensions = get_option( 'ma_allowedExtension' );
-	$ma_maxFileSize = get_option( 'ma_maxFileSize' );
-	
-?>
-	<div class="wrap">
-		<h2><?php _e( 'Manage Option for attachement in private messages', 'bp-msgat' ) ?></h2>
-		<br />
 
-		<?php if ( isset($updated) ) : ?><?php echo "<div id='message' class='updated fade'><p>" . __( 'Settings Updated.', 'bp-msgat' ) . "</p></div>" ?><?php endif; ?>
+		public static function instance() {
+			static $instance = null;
 
-		<form action="<?php echo site_url() . '/wp-admin/admin.php?page=bp-msgat-settings' ?>" name="msgat-settings-form" id="msgat-settings-form" method="post">
+			if ( null === $instance ) {
+				$instance = new BP_Msgat_Admin;
+				$instance->setup();
+			}
 
-			<table class="form-table">
-				<tr valign="top">
-					<th scope="row"><label><?php _e( 'Allowed Extensions', 'bp-msgat' ) ?></label></th>
-					<td>
-						<ul class='msgat_ext_chkboxlist'>
-						<?php
-							
-							$al_ext_arr = explode(",",$ma_allowedExtensions);
-							$counter = 1;
-							foreach($al_ext_arr as $ext){
-								if(trim($ext!="")){?>
-									<li>
-									<input type="checkbox" id="ma-allowedExtensions<?php echo $counter;?>" name="ma-allowedExtensions[]" value="<?php echo $ext;?>" checked="checked"/>
-									<label for="ma-allowedExtensions<?php echo $counter;?>"><?php echo $ext;?></label>
-									</li>
-							<?php
-								}
-								$counter++;
-							}
-						?>
-						</ul>
-					</td>
-				</tr>
-				<tr>
-					<th scope="row"><label for="ma-addNewExtention"><?php _e( 'Add more file types (extensions)', 'bp-msgat' ) ?></label></th>
-					<td>
-						<input name="ma-addNewExtention" type="text" id="ma-addNewExtention"  size="50" /><br/>
-						<small><em>
-						<?php _e( 'comma separated values. example: png, jpg etc.. wihtout any dot (".")', 'bp-msgat' ) ?>
-						</em></small>
-					</td>
-				</tr>
-				<tr>
-					<th scope="row"><label for="target_uri"><?php _e( 'Maximum File Size', 'bp-msgat' ) ?></label></th>
-					<td>
-						<input name="ma-maxFileSize" type="text" id="ma-maxFileSize" value="<?php echo esc_attr( $ma_maxFileSize ); ?>" size="5" />MB
-					</td>
-				</tr>
-				<tr><td colspan="2"><hr/></td></tr>
-				<tr>
-					<td colspan="2">
-						<strong><?php _e('Add code to wrap around the attachements.','bp-msgat');?></strong>
-						<em><?php _e('"[att-code]" is the shortcode for file url','bp-msgat');?></em>
-					</td>
-				</tr>
-				<tr>
-					<td>
-						<?php _e('Code for audio files','bp-msgat');?><br/>
-						<textarea name="code_audio" id="code_audio" rows="8" cols="50"><?php echo stripslashes(get_option( 'ma_audiocode' ));?></textarea>
-						<?php
-						$show_attach_vid = false; $show_attach_aud = false;
-						$ma_show_attach = get_option('ma_show_attach');
-						if(isset($ma_show_attach) && $ma_show_attach !=""){
-							$show_attach = explode(",",$ma_show_attach);
-							if (in_array("audio", $show_attach)) {
-								$show_attach_aud = true;
-							}
-							if (in_array("video", $show_attach)) {
-								$show_attach_vid = true;
-							}
-						}
-						?>
-						<br/>
-						<input type="checkbox" name="show_attach_audio" id="show_attach_audio" <?php if($show_attach_aud){echo 'checked="checked"';} ?>/>
-						<label for="show_attach_audio"><?php _e('Show Audio tag','bp-msgat');?></label>
-					</td>
-					<td>
-						<?php _e('Code for video files','bp-msgat');?><br/>
-						<textarea name="code_video" id="code_video" rows="8" cols="50"><?php echo stripslashes(get_option( 'ma_videocode' ));?></textarea>
-						<br/>
-						<input type="checkbox" name="show_attach_video" id="show_attach_video" <?php if($show_attach_vid){echo 'checked="checked"';} ?>/>
-						<label for="show_attach_video"><?php _e('Show Video tag','bp-msgat');?></label>
-					</td>
-				</tr>
-			</table>
-			<p class="submit">
-				<input type="submit" name="ma-submit" value="<?php _e( 'Save Settings', 'bp-msgat' ) ?>"/>
-			</p>
+			return $instance;
+		}
 
-			<?php
-			/* This is very important, don't leave it out. */
-			wp_nonce_field( 'msgat-settings' );
+		public function option( $key ) {
+			$value = bp_message_attachment()->option($key);
+			return $value;
+		}
+
+		public function setup() {
+			if ( (!is_admin() && !is_network_admin() ) || !current_user_can('manage_options') ) {
+				return;
+			}
+
+			$this->plugin_settings_url = admin_url('options-general.php?page=' . $this->plugin_slug);
+
+			$this->network_activated = $this->is_network_activated();
+
+			//if the plugin is activated network wide in multisite, we need to override few variables
+			if ( $this->network_activated ) {
+				// Main settings page - menu hook
+				$this->menu_hook = 'network_admin_menu';
+
+				// Main settings page - parent page
+				$this->settings_page = 'settings.php';
+
+				// Main settings page - Capability
+				$this->capability = 'manage_network_options';
+
+				// Settins page - form's action attribute
+				$this->form_action = 'edit.php?action=' . $this->plugin_slug;
+
+				// Plugin settings page url
+				$this->plugin_settings_url = network_admin_url('settings.php?page=' . $this->plugin_slug);
+			}
+
+			//if the plugin is activated network wide in multisite, we need to process settings form submit ourselves
+			if ( $this->network_activated ) {
+				add_action('network_admin_edit_' . $this->plugin_slug, array( $this, 'save_network_settings_page' ));
+			}
+
+			add_action('admin_init', array( $this, 'admin_init' ));
+			add_action($this->menu_hook, array( $this, 'admin_menu' ));
+
+			add_filter('plugin_action_links', array( $this, 'add_action_links' ), 10, 2);
+			add_filter('network_admin_plugin_action_links', array( $this, 'add_action_links' ), 10, 2);
+		}
+
+		/**
+		 * Check if the plugin is activated network wide(in multisite).
+		 * 
+		 * @return boolean
+		 */
+		private function is_network_activated() {
+			$network_activated = false;
+			if ( is_multisite() ) {
+				if ( !function_exists('is_plugin_active_for_network') )
+					require_once( ABSPATH . '/wp-admin/includes/plugin.php' );
+
+				if ( is_plugin_active_for_network('buddypress-message-attachment/loader.php') ) {
+					$network_activated = true;
+				}
+			}
+			return $network_activated;
+		}
+
+		public function admin_menu() {
+			add_submenu_page(
+				$this->settings_page, __('BP Message Attachments', 'bp-msgat'), __('Message Attachments', 'bp-msgat'), $this->capability, $this->plugin_slug, array( $this, 'options_page' )
+			);
+		}
+
+		public function options_page() {
 			?>
-		</form>
-	</div>
-<?php
-}
+			<div class="wrap">
+				<h2><?php _e('BP Message Attachments', 'bp-msgat'); ?></h2>
+				<form method="post" action="<?php echo $this->form_action; ?>">
 
+					<?php
+					if ( $this->network_activated && isset($_GET['updated']) ) {
+						echo "<div class='updated'><p>" . __('Settings updated.', 'bp-msgat') . "</p></div>";
+					}
+					?>
 
-function bp_msgat_install_tables() {
-	global $wpdb;
+					<?php settings_fields('bp_msgat_plugin_options'); ?>
+					<?php do_settings_sections(__FILE__); ?>
 
-	if ( !is_super_admin() )
-		return;
+					<p class="submit">
+						<input name="bp_msgat_submit" type="submit" class="button-primary" value="<?php esc_attr_e('Save Changes'); ?>" />
+					</p>
+				</form>
+			</div>
+			<?php
+		}
 
-	if ( !empty($wpdb->charset) )
-		$charset_collate = "DEFAULT CHARACTER SET $wpdb->charset";
+		public function admin_init() {
+			register_setting('bp_msgat_plugin_options', 'bp_msgat_plugin_options', array( $this, 'plugin_options_validate' ));
+
+			add_settings_section('general_section', __('Attachment Settings', 'bp-msgat'), array( $this, 'section_general' ), __FILE__);
+			add_settings_field('file-types', __('File Types', 'bp-msgat'), array( $this, 'setting_file_types' ), __FILE__, 'general_section');
+			add_settings_field('max-size', __('Maximum Size', 'bp-msgat'), array( $this, 'setting_max_size' ), __FILE__, 'general_section');
+
+			add_settings_section('misc_section', __('Miscellaneous', 'bp-msgat'), array( $this, 'section_misc' ), __FILE__);
+			add_settings_field('load-css', __('Load CSS', 'bp-msgat'), array( $this, 'setting_load_css' ), __FILE__, 'misc_section');
+		}
+
+		public function section_general() {
+			//nothing..
+		}
+
+		public function section_misc() {
+			//nothing..
+		}
+
+		private function file_upload_max_size() {
+			// Start with post_max_size.
+			$max_size_calculated = $post_max_size = $this->return_bytes(ini_get('post_max_size'));
+
+			// If upload_max_size is less, then reduce. Except if upload_max_size is
+			// zero, which indicates no limit.
+			$upload_max = $this->return_bytes(ini_get('upload_max_filesize'));
+			if ( $upload_max > 0 && $upload_max < $post_max_size ) {
+				$max_size_calculated = $upload_max;
+			}
+
+			return array(
+				'post_max_size' => $post_max_size,
+				'upload_max_filesize' => $upload_max,
+				'max_size_calculated' => $max_size_calculated,
+			);
+		}
+
+		private function return_bytes( $val ) {
+			$val = trim($val);
+			$last = strtolower($val[strlen($val) - 1]);
+			switch ( $last ) {
+				// The 'G' modifier is available since PHP 5.1.0
+				case 'g':
+					$val *= 1024;
+				case 'm':
+					$val *= 1024;
+				case 'k':
+					$val *= 1024;
+			}
+
+			return $val;
+		}
+
+		public function plugin_options_validate( $input ) {
+			$input['max-size'] = ( float ) $input['max-size'] ? ( float ) $input['max-size'] : 2;
+
+			/* check for maximum post size and upload size restriction */
+			$info = $this->file_upload_max_size();
+			if ( $info['max_size_calculated'] < ( $input['max-size'] * 1024 * 1024 ) ) {
+				$input['max-size'] = $info['max_size_calculated'] / (1024 * 1024);
+				$input['max-size'] = number_format($input['max-size'], 2);
+			}
+
+			if ( !isset($input['load-css']) || !$input['load-css'] ) {
+				$input['load-css'] = 'no';
+			}
+			return $input; //no validations for now
+		}
+
+		public function setting_file_types() {
+			$selected_extensions = $this->option('file-types');
+
+			$all_file_types = bp_message_attachment()->all_file_types();
+
+			foreach ( $all_file_types as $group_key => $group ) {
+				echo "<p><strong>{$group['label']}</strong></p>";
+
+				$extensions = array_unique($group['extensions']);
+				//sort alphabatically
+				asort($extensions);
+
+				foreach ( $extensions as $extension ) {
+					$checked = in_array($extension, $selected_extensions) ? ' checked' : '';
+					echo '<label><input type="checkbox" name="bp_msgat_plugin_options[file-types][]" value="' . $extension . '" ' . $checked . '>' . $extension . '</label>&nbsp;&nbsp;&nbsp;&nbsp;';
+				}
+				echo "<br><br>";
+			}
+		}
+
+		public function setting_max_size() {
+			$max_size = $this->option('max-size');
+			echo "<input name='bp_msgat_plugin_options[max-size]' type='text' min='1' value='" . esc_attr($max_size) . "' />MB";
+			echo '<p class="description">' . __('Maximum size(in MB) allowed per file.', 'bp-msgat') . '</p>';
+
+			echo "<p class='notice notice-info'>";
+
+			$info = $this->file_upload_max_size();
+			$max_size_possible = $info['max_size_calculated'] / (1024 * 1024);
+			$max_size_possible = number_format($max_size_possible, 2);
+
+			printf(__('Based on your php configuration, maximum file size can not exceed %s MB.', 'bp-msgat'), $max_size_possible);
+			echo "</p>";
+		}
+
+		public function setting_load_css() {
+			$load_css = $this->option('load-css');
+			$checked = $load_css == 'yes' ? ' checked' : '';
+			echo "<input name='bp_msgat_plugin_options[load-css]' type='checkbox' value='yes' {$checked} />" . __('Yes', 'bp-msgat');
+			echo '<p class="description">' . __('Whether to load plugin\'s css file or not. If you have overriden plugins\' css rules in your theme, you can uncheck this.', 'bp-msgat') . '</p>';
+		}
+
+		public function save_network_settings_page() {
+			if ( !check_admin_referer('bp_msgat_plugin_options-options') )
+				return;
+
+			if ( !current_user_can($this->capability) )
+				die('Access denied!');
+
+			if ( isset($_POST['bp_msgat_submit']) ) {
+				$submitted = stripslashes_deep($_POST['bp_msgat_plugin_options']);
+				$submitted = $this->plugin_options_validate($submitted);
+
+				update_site_option('bp_msgat_plugin_options', $submitted);
+			}
+
+			// Where are we redirecting to?
+			$base_url = trailingslashit(network_admin_url()) . 'settings.php';
+			$redirect_url = add_query_arg(array( 'page' => $this->plugin_slug, 'updated' => 'true' ), $base_url);
+
+			// Redirect
+			wp_redirect($redirect_url);
+			die();
+		}
+
+		public function add_action_links( $links, $file ) {
+			// Return normal links if not this plugin
+			if ( plugin_basename(basename(constant('BPMSGAT_PLUGIN_DIR')) . '/loader.php') != $file ) {
+				return $links;
+			}
+
+			$mylinks = array(
+				'<a href="' . esc_url($this->plugin_settings_url) . '">' . __("Settings", "bp-msgat") . '</a>',
+			);
+			return array_merge($links, $mylinks);
+		}
+
+	}
 
 	
-	$sql = array();
-	$sql[] = "CREATE TABLE IF NOT EXISTS {$wpdb->base_prefix}bp_msgat (
-		  		id bigint(20) NOT NULL AUTO_INCREMENT PRIMARY KEY,
-		  		message_id bigint(20) NOT NULL,
-		  		attachement_url varchar(200) NOT NULL,
-			    KEY message_id (message_id),
-			    KEY attachement_url (attachement_url)
-		 	   ) {$charset_collate};";
 
-	dbDelta($sql);
+	// End class BP_Msgat_Admin
 
-	update_site_option( 'bp-msgat-db-version', BP_EXAMPLE_DB_VERSION );
-}
-//add_action( 'admin_init', 'bp_msgat_install_tables' );
-?>
+endif;
