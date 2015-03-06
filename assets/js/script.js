@@ -12,6 +12,17 @@ window.BPMsgAt_Media_Uploader = (function($, util) {
 			if (!self.get_elements())
 				return false;
 
+			//hide file upload if user is sending a notice to all users
+			if (_l.$cb_send_notice.length !== 0) {
+				_l.$cb_send_notice.change(function(){
+					if ($(this).is(':checked')) {
+						_l.$form.find(".bp_msgat_ui_wrapper").hide();
+					} else {
+						_l.$form.find(".bp_msgat_ui_wrapper").show();
+					}
+				});
+			}
+			
 			setTimeout(function() {
 				self.start_uploader();
 			}, 10);
@@ -33,6 +44,7 @@ window.BPMsgAt_Media_Uploader = (function($, util) {
 			_l.$button = _l.$form.find('input[type="submit"],button[type="submit"]');
 			_l.$field_attachment_ids = _l.$form.find('input[name="bp_msgat_attachment_ids"]');
 			_l.$upload_button = $('#btn_msgat_upload');
+			_l.$cb_send_notice = _l.$form.find('input[name="send-notice"]');
 
 			return true;
 		},

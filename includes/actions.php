@@ -49,8 +49,8 @@ class BP_Msgat_Action{
 		if( !bp_is_current_component( 'messages' ) )
 			return;
 		
-		wp_enqueue_script( 'bp-msgat', BPMSGAT_PLUGIN_URL . 'assets/js/script.min.js', array( 'jquery', 'plupload-all' ), '2.0', true );
-		//wp_enqueue_script( 'bp-msgat', BPMSGAT_PLUGIN_URL . 'assets/js/script.js', array( 'jquery', 'plupload-all' ), '2.0', true );
+		wp_enqueue_script( 'bp-msgat', BPMSGAT_PLUGIN_URL . 'assets/js/script.min.js', array( 'jquery', 'plupload-all' ), '2.1.0', true );
+		//wp_enqueue_script( 'bp-msgat', BPMSGAT_PLUGIN_URL . 'assets/js/script.js', array( 'jquery', 'plupload-all' ), '2.1.0', true );
 		
 		if( $this->option( 'load-css' )=='yes' ){
 			wp_enqueue_style( 'bp-msgat', BPMSGAT_PLUGIN_URL . 'assets/css/style.css', array(), '2.0' );
@@ -158,6 +158,12 @@ class BP_Msgat_Action{
 	}
 	
 	public function add_attachments( $msg ){
+		//dont do anything if it was a notice to all users instead of a private message.
+		//this method is never called if a notice is being sent, but just to make sure...
+		if( isset( $_POST['send-notice'] ) ){
+			return;
+		}
+		
 		$attachment_ids_csv = isset( $_POST['bp_msgat_attachment_ids'] ) ? trim( $_POST['bp_msgat_attachment_ids'], ',' ) : '';
 		if( $attachment_ids_csv && !empty( $attachment_ids_csv ) ){
 			$attachment_ids_temp = explode( ',', $attachment_ids_csv );
