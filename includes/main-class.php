@@ -29,7 +29,7 @@ class BP_Msgat_Plugin {
 	 * @var array
 	 */
 	private $default_options = array(
-		'file-types'	=> array( 'png', 'jpg', 'jpeg', 'pdf' ),//allowed files types in attachment
+		'file-types'	=> array( 'png', 'jpg', 'jpeg', 'pdf', 'zip', 'rar', ),//allowed files types in attachment
 		'max-size'		=> 5,//maximum attachment size in MB (per individual file),
 		'load-css'		=> true,
 	);
@@ -163,7 +163,11 @@ class BP_Msgat_Plugin {
 				),
 				'docs'		=> array(
 					'label'			=> __( 'Documents', 'bp-msgat' ),
-					'extensions'	=> array( 'txt', 'odt', 'doc', 'docx', 'pdf', 'xls', 'xlsx', 'ods', 'ppt', 'pptx', )
+					'extensions'	=> array( 'txt', 'odt', 'doc', 'docx', 'pdf', 'xls', 'xlsx', 'ods', 'ppt', 'pptx', ),
+				),
+				'archives'	=> array(
+					'label'			=> __( 'Archives', 'bp-msgat' ),
+					'extensions'	=> array( 'zip', 'rar', 'gz', '7z', ),
 				),
 				'audio'		=> array(
 					'label'			=> __( 'Audio', 'bp-msgat' ),
